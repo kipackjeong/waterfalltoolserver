@@ -24,9 +24,6 @@ export class RegisterDto {
     description: 'User display name',
     example: 'John',
   })
-  @IsString({ message: 'Display name must be a string' })
-  @IsOptional()
-  displayName?: string;
 
   @ApiPropertyOptional({
     description: 'User first name',

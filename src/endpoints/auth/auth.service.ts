@@ -47,8 +47,7 @@ export class AuthService {
       // Store additional user data in Firestore
       const userData = {
         email: registerDto.email,
-        firstName: registerDto.firstName || null,
-        lastName: registerDto.lastName || null,
+        displayName: `${registerDto.firstName || ''} ${registerDto.lastName || ''}`.trim(),
         provider: 'email',
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       };
@@ -66,8 +65,7 @@ export class AuthService {
         user: {
           id: userRecord.uid,
           email: registerDto.email,
-          firstName: registerDto.firstName,
-          lastName: registerDto.lastName,
+          displayName: `${registerDto.firstName || ''} ${registerDto.lastName || ''}`.trim(),
         },
         token,
       };
@@ -80,41 +78,36 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    try {
-      // Verify email and password
-      // Note: Firebase Admin SDK doesn't have direct email/password authentication
-      // We would typically use Firebase Client SDK for this
-      // This is a simplified implementation
+    // Verify email and password
+    // Note: Firebase Admin SDK doesn't have direct email/password authentication
+    // We would typically use Firebase Client SDK for this
+    // This is a simplified implementation
 
-      // Find the user by email in Firebase Auth
-      const userRecord = await this.firebaseService.getAuth()
-        .getUserByEmail(loginDto.email)
-        .catch(() => {
-          throw new UnauthorizedException('Invalid email or password');
-        });
+    // Find the user by email in Firebase Auth
+    const userRecord = await this.firebaseService.getAuth()
+      .getUserByEmail(loginDto.email)
+      .catch(() => {
+        throw new UnauthorizedException('Invalid email or password');
+      });
 
-      // Generate a custom token for the authenticated user
-      const token = await this.firebaseService.getAuth().createCustomToken(userRecord.uid);
+    // Generate a custom token for the authenticated user
+    const token = await this.firebaseService.getAuth().createCustomToken(userRecord.uid);
 
-      // Get user data from Firestore
-      const userDoc = await this.firebaseService.getFirestore()
-        .collection('users')
-        .doc(userRecord.uid)
-        .get();
+    // Get user data from Firestore
+    const userDoc = await this.firebaseService.getFirestore()
+      .collection('users')
+      .doc(userRecord.uid)
+      .get();
 
-      const userData = userDoc.data() || {};
+    const userData = userDoc.data() || {};
 
-      return {
-        user: {
-          id: userRecord.uid,
-          email: userRecord.email,
-          firstName: userData.firstName || null,
-          lastName: userData.lastName || null,
-        },
-        token,
-      };
-    } catch (err) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+    return {
+      user: {
+        id: userRecord.uid,
+        email: userRecord.email,
+        displayName: userData.displayName || null
+      },
+      token,
+    };
   }
 }

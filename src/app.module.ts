@@ -9,6 +9,7 @@ import { RequestLoggerMiddleware } from './utils/logger/request-logger.middlewar
 import { LoggerService } from './utils/logger/logger.service';
 import { AuthModule } from './endpoints/auth/auth.module';
 import { FirebaseAuthMiddleware } from './providers/firebase/firebase.middleware';
+import { ProjectsModule } from './endpoints/projects/projects.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { FirebaseAuthMiddleware } from './providers/firebase/firebase.middleware
     FirebaseModule,
     UsersModule,
     AuthModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [LoggerService, AppService],
