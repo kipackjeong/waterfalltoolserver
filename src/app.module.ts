@@ -10,6 +10,7 @@ import { LoggerService } from './utils/logger/logger.service';
 import { AuthModule } from './endpoints/auth/auth.module';
 import { FirebaseAuthMiddleware } from './providers/firebase/firebase.middleware';
 import { ProjectsModule } from './endpoints/projects/projects.module';
+import { SamplesModule } from './endpoints/_samples/samples.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ProjectsModule } from './endpoints/projects/projects.module';
     UsersModule,
     AuthModule,
     ProjectsModule,
+    SamplesModule,
   ],
   controllers: [AppController],
   providers: [LoggerService, AppService],
@@ -42,6 +44,8 @@ export class AppModule implements NestModule {
       .forRoutes(
         { path: 'users', method: RequestMethod.ALL },
         { path: 'users/*', method: RequestMethod.ALL },
+        { path: 'samples', method: RequestMethod.ALL },
+        { path: 'samples/*', method: RequestMethod.ALL },
         { path: 'auth/verify-token', method: RequestMethod.POST },
       );
   }

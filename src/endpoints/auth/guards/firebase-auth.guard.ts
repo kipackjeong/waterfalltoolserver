@@ -28,6 +28,7 @@ export class FirebaseAuthGuard implements CanActivate {
       request.user = decodedToken;
       return true;
     } catch (error) {
+      console.error('Error verifying token:', error);
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

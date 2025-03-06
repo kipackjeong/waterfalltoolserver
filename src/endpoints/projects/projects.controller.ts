@@ -31,7 +31,8 @@ import {
 import { ProjectsService } from './projects.service';
 
 @ApiTags('projects')
-@ApiBearerAuth('firebase-jwt')
+@ApiBearerAuth('firebase-jwt') /** tells Swagger UI that these endpoints require a bearer token. This creates an "Authorize" button in Swagger UI where users can input their token
+*/
 @UseGuards(FirebaseAuthGuard)
 @Controller('projects')
 export class ProjectsController {
@@ -105,7 +106,7 @@ export class ProjectsController {
       if (res && '_duplicate' in res) {
         return {
           ...res,
-          message: 'Project with this email already exists',
+          message: 'Project with this name already exists',
         };
       }
       return res;

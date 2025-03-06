@@ -36,13 +36,13 @@ export class ProjectsService {
   }
   /**
    * Find projects by user ID
-   * @param id User ID
+   * @param userId User ID
    * @returns Array of projects
    */
-  async findAllByUserId(id: string): Promise<Project[]> {
+  async findAllByUserId(userId: string): Promise<Project[]> {
     try {
       const snapshot = await this.firebaseService.collection(this.COLLECTION_NAME)
-        .where('userId', '==', id)
+        .where('userId', '==', userId)
         .get();
 
       const res = snapshot.docs.map(doc => ({
@@ -50,9 +50,11 @@ export class ProjectsService {
         ...doc.data(),
       })) as Project[];
 
+      console.log('res:', res)
+
       return res;
     } catch (err) {
-      console.error(`Error finding projects by userId ${id}:`, err);
+      console.error(`Error finding projects by userId ${userId}:`, err);
       throw err;
     }
   }
@@ -79,13 +81,64 @@ export class ProjectsService {
    */
   async create(projectData: Omit<Project, 'id'>): Promise<Project> {
     try {
-      if (!projectData.email) {
-        throw new BadRequestException('Email is required');
+      if (!projectData.name) {
+        throw new BadRequestException('Name is required');
       }
       projectData.createdAt = new Date();
+      
+      // Sort sqlServers, databases, and tables if they exist in the projectData
+      if (projectData.sqlServers && Array.isArray(projectData.sqlServers)) {
+        // Sort sqlServers by name
+        projectData.sqlServers = sortArrayByName(projectData.sqlServers);
+        
+        // Sort databases within each sqlServer
+        projectData.sqlServers.forEach(server => {
+          if (server.databases && Array.isArray(server.databases)) {
+            server.databases = sortArrayByName(server.databases);
+            
+            // Sort tables within each database
+            server.databases.forEach(db => {
+              if (db.tables && Array.isArray(db.tables)) {
+                db.tables = sortArrayByName(db.tables);
+              }
+            });
+          }
+        });
+      }
+      
+      // Check if a project with the same name already exists
+      const snapshot = await this.firebaseService.collection(this.COLLECTION_NAME)
+        .where('name', '==', projectData.name)
+        .limit(1)
+        .get();
+
+      // If a project with the same name exists, merge it with the new data
+      if (!snapshot.empty) {
+        const existingDoc = snapshot.docs[0];
+        const existingProject = { id: existingDoc.id, ...existingDoc.data() } as Project;
+
+        // Deep merge the existing project with the new data
+        const mergedProject = deepMergeProjects(existingProject, projectData as Project);
+        
+        // Ensure all arrays in the merged project are sorted
+        sortProjectArrays(mergedProject);
+
+        // Update the existing project with the merged data
+        await this.firebaseService.update(this.COLLECTION_NAME, existingProject.id, mergedProject);
+
+        // Return the merged project with the _duplicate flag
+        const res = {
+          ...mergedProject,
+          id: existingProject.id,
+          _duplicate: true
+        };
+
+        return res as Project & { _duplicate: boolean };
+      }
+
       // Add timestamps and default values
       const data = {
-        ...projectData,
+        ...projectData
       };
 
       // Create the project document
@@ -203,3 +256,138 @@ export class ProjectsService {
     }
   }
 }
+
+
+
+/**
+ * Deep merges two projects, maintaining the hierarchy structure at all levels
+ * This is particularly useful for preserving data that might be missing in updates
+ */
+/**
+ * Sorts an array of objects by their name property
+ */
+const sortArrayByName = <T extends { name: string }>(array: T[]): T[] => {
+  return [...array].sort((a, b) => a.name.localeCompare(b.name));
+};
+
+/**
+ * Sorts all arrays in a project (sqlServers, databases, tables)
+ */
+const sortProjectArrays = (project: Project): void => {
+  if (project.sqlServers && Array.isArray(project.sqlServers)) {
+    // Sort sqlServers by name
+    project.sqlServers = sortArrayByName(project.sqlServers);
+    
+    // Sort databases within each sqlServer
+    project.sqlServers.forEach(server => {
+      if (server.databases && Array.isArray(server.databases)) {
+        server.databases = sortArrayByName(server.databases);
+        
+        // Sort tables within each database
+        server.databases.forEach(db => {
+          if (db.tables && Array.isArray(db.tables)) {
+            db.tables = sortArrayByName(db.tables);
+          }
+        });
+      }
+    });
+  }
+};
+
+/**
+ * Deep merges two projects, maintaining the hierarchy structure at all levels
+ * This is particularly useful for preserving data that might be missing in updates
+ */
+const deepMergeProjects = (existingProject: Project, newProject: Project): Project => {
+  if (!existingProject || !newProject) return newProject || existingProject;
+
+  // Create a base merged project with primitive properties
+  const merged: Project = { ...existingProject, ...newProject };
+
+  // Ensure userId consistency - prioritize existing userId if available
+  merged.userId = existingProject.userId || newProject.userId;
+
+  // If the new project has SQL server models, we need to merge them with existing ones
+  if (newProject.sqlServers && existingProject.sqlServers) {
+    // Create a map of existing servers by name for easy lookup
+    const existingServersMap = existingProject.sqlServers.reduce((map, server) => {
+      map[server.name] = server;
+      return map;
+    }, {});
+
+    // Create merged SQL server models array
+    merged.sqlServers = newProject.sqlServers.map(newServer => {
+      const existingServer = existingServersMap[newServer.name];
+
+      // If this server doesn't exist in the existing project, use the new server as is
+      if (!existingServer) return newServer;
+
+      // Merge the server properties
+      const mergedServer = { ...existingServer, ...newServer };
+
+      // If the new server has databases, we need to merge them with existing ones
+      if (newServer.databases && existingServer.databases) {
+        // Create a map of existing databases by name for easy lookup
+        const existingDbMap = existingServer.databases.reduce((map, db) => {
+          map[db.name] = db;
+          return map;
+        }, {});
+
+        // Create merged databases array
+        mergedServer.databases = newServer.databases.map(newDb => {
+          const existingDb = existingDbMap[newDb.name];
+
+          // If this database doesn't exist in the existing server, use the new database as is
+          if (!existingDb) return newDb;
+
+          // Merge the database properties
+          const mergedDb = { ...existingDb, ...newDb };
+
+          // If the new database has tables, we need to merge them with existing ones
+          if (newDb.tables && existingDb.tables) {
+            // Create a map of existing tables by name for easy lookup
+            const existingTableMap = existingDb.tables.reduce((map, table) => {
+              map[table.name] = table;
+              return map;
+            }, {});
+
+            // Create merged tables array starting with tables from the new project
+            const mergedTables = newDb.tables.map(newTable => {
+              const existingTable = existingTableMap[newTable.name];
+
+              // If this table doesn't exist in the existing database, use the new table as is
+              if (!existingTable) return newTable;
+
+              // Merge the table properties
+              return { ...existingTable, ...newTable };
+            });
+
+            // Also include any tables from the existing database that aren't in the new database
+            const newTableNames = new Set(newDb.tables.map(t => t.name));
+            const missingTables = existingDb.tables.filter(table => !newTableNames.has(table.name));
+
+            // Set the merged tables array including both new and existing tables
+            mergedDb.tables = [...mergedTables, ...missingTables];
+          }
+
+          return mergedDb;
+        });
+      }
+
+      return mergedServer;
+    });
+
+    // Also include any servers from the existing project that aren't in the new project
+    const newServerNames = new Set(newProject.sqlServers.map(s => s.name));
+    const missingServers = existingProject.sqlServers.filter(server => !newServerNames.has(server.name));
+    merged.sqlServers = [...merged.sqlServers, ...missingServers];
+  }
+
+  // Update the timestamps
+  merged.updatedAt = new Date().toISOString();
+
+  // Ensure all arrays are sorted
+  sortProjectArrays(merged);
+
+  return merged;
+};

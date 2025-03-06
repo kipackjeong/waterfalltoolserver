@@ -10,15 +10,15 @@ export class CreateProjectDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
-  @ApiPropertyOptional({
-    description: 'Project description',
-    example: 'A description of my project',
-  })
-  @IsString({ message: 'Description must be a string' })
-  @IsOptional()
-  description?: string;
+  // @ApiPropertyOptional({
+  //   description: 'Project description',
+  //   example: 'A description of my project',
+  // })
+  // @IsString({ message: 'Description must be a string' })
+  // @IsOptional()
+  // description?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Project owner ID',
     example: 'user123',
   })
@@ -27,11 +27,8 @@ export class CreateProjectDto {
   userId?: string;
 
   @ApiPropertyOptional({
-    description: 'Whether the project is active',
-    example: true,
-    default: true,
+    description: 'SQL Server view models',
   })
-  @IsBoolean({ message: 'IsActive must be a boolean' })
   @IsOptional()
-  isActive?: boolean;
+  sqlServers?: any[];
 }

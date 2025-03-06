@@ -7,7 +7,7 @@ import { LoggerModule } from '../../utils/logger/logger.module';
 import { LoggerService } from 'src/utils/logger/logger.service';
 
 @Module({
-  imports: [FirebaseModule],
+  imports: [FirebaseModule, LoggerModule],
   controllers: [AuthController],
   providers: [AuthService, UsersService, LoggerService],
   exports: [AuthService],
