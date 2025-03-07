@@ -4,14 +4,29 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpExceptionFilter } from './utils/filters/http-exception.filter';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import * as path from 'path';
+import * as fs from 'fs';
+import { decryptAndLoadEnv } from './utils/env-crypto';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Try to load from encrypted .env file in production
+  console.log("Loading environment variables...")
+  const envEncryptedPath = path.join(__dirname, '/env.encrypted');
+  console.log("envEncryptedPath:", envEncryptedPath);
+  console.log("File exists:", fs.existsSync(envEncryptedPath));
+  if (fs.existsSync(envEncryptedPath)) {
+    console.log("Loading encrypted environment variables...")
+    // We're in production with an encrypted .env file
+    decryptAndLoadEnv(envEncryptedPath);
+  } else {
+    // We're in development, use regular dotenv
+    // dotenv.config();
+  }
 
+  const app = await NestFactory.create(AppModule);
   // Use winston logger
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
   app.useLogger(logger);
-
   // Enable CORS with more permissive settings for local development
   app.enableCors({
     origin: true, // Allow all origins

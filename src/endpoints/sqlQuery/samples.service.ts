@@ -67,7 +67,7 @@ export class SamplesService {
    */
   async findById(id: string): Promise<Sample | null> {
     try {
-      const doc = await this.firebaseService.doc(this.COLLECTION_NAME, id).get();
+      const doc = await this.firebaseService.collection(this.COLLECTION_NAME).doc(id).get();
       if (!doc.exists) {
         return null;
       }
@@ -94,7 +94,7 @@ export class SamplesService {
       if (!sampleData.name) {
         throw new BadRequestException('Name is required');
       }
-      
+
       // Add timestamps and default values
       const data = {
         ...sampleData,
