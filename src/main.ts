@@ -10,17 +10,11 @@ import { decryptAndLoadEnv } from './utils/env-crypto';
 
 async function bootstrap() {
   // Try to load from encrypted .env file in production
-  console.log("Loading environment variables...")
   const envEncryptedPath = path.join(__dirname, '/env.encrypted');
-  console.log("envEncryptedPath:", envEncryptedPath);
-  console.log("File exists:", fs.existsSync(envEncryptedPath));
   if (fs.existsSync(envEncryptedPath)) {
-    console.log("Loading encrypted environment variables...")
-    // We're in production with an encrypted .env file
     decryptAndLoadEnv(envEncryptedPath);
   } else {
-    // We're in development, use regular dotenv
-    // dotenv.config();
+    throw new Error('Missing encrypted .env file at ' + envEncryptedPath);
   }
 
   const app = await NestFactory.create(AppModule);
