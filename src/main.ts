@@ -14,7 +14,7 @@ async function bootstrap() {
   if (fs.existsSync(envEncryptedPath)) {
     decryptAndLoadEnv(envEncryptedPath);
   } else {
-    throw new Error('Missing encrypted .env file at ' + envEncryptedPath);
+    // throw new Error('Missing encrypted .env file at ' + envEncryptedPath);
   }
 
   const app = await NestFactory.create(AppModule);
@@ -77,7 +77,7 @@ async function bootstrap() {
   });
 
   // Start the server
-  const port = process.env.PORT ?? 3001;
+  const port = process.env.PORT ?? 3002;
   await app.listen(port);
   logger.log(`Application is running on: http://localhost:${port}`);
   logger.log(`Swagger UI available at: http://localhost:${port}/api`);

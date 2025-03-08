@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class UpdateProjectDto {
@@ -10,21 +10,20 @@ export class UpdateProjectDto {
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({
-    description: 'Project description',
-    example: 'A description of my project',
-  })
-  @IsString({ message: 'Description must be a string' })
+  @IsString({ message: 'User ID must be a string' })
   @IsOptional()
-  description?: string;
+  userId?: string;
 
   @ApiPropertyOptional({
+    description: 'SQL Server view models',
+  })
+
+  @IsOptional()
+  sqlServers?: any[];
+  @ApiProperty({
     description: 'Project owner ID',
     example: 'user123',
   })
-  @IsString({ message: 'Owner ID must be a string' })
-  @IsOptional()
-  ownerId?: string;
 
   @ApiPropertyOptional({
     description: 'Whether the project is active',

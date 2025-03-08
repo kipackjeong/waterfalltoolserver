@@ -11,6 +11,7 @@ import { AuthModule } from './endpoints/auth/auth.module';
 import { FirebaseAuthMiddleware } from './providers/firebase/firebase.middleware';
 import { ProjectsModule } from './endpoints/projects/projects.module';
 import { SamplesModule } from './endpoints/_samples/samples.module';
+import { MssqlsModule } from './endpoints/mssql/mssql.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SamplesModule } from './endpoints/_samples/samples.module';
     UsersModule,
     AuthModule,
     ProjectsModule,
+    MssqlsModule,
     SamplesModule,
   ],
   controllers: [AppController],
